@@ -34,7 +34,7 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
   final TextEditingController _promptController = TextEditingController();
   bool _isGenerating = false;
   bool _isDownloading = false;
-  String? _generatedImageUrl;
+  Uint8List? _generatedImageBytes;
   String _selectedStyle = 'No Style';
 
   final List<String> _styles = [
@@ -58,35 +58,55 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
 
     setState(() {
       _isGenerating = true;
-      _generatedImageUrl = null;
+      _generatedImageBytes = null;
     });
 
-    if (!mounted) return;
+    String prompt = _promptController.text;
+    if (_selectedStyle != 'No Style') {
+      prompt += ', $_selectedStyle style';
+    }
 
-    setState(() {
-      _isGenerating = false;
-      // Use Pollinations.ai to generate an image based on the prompt
-      String prompt = _promptController.text;
-      if (_selectedStyle != 'No Style') {
-        prompt += ', $_selectedStyle style';
-      }
+    try {
+      // Use Pollinations.ai (Free API)
       final encodedPrompt = Uri.encodeComponent(prompt);
-      _generatedImageUrl =
-          'https://image.pollinations.ai/prompt/$encodedPrompt?width=1024&height=1024&seed=${DateTime.now().millisecondsSinceEpoch}&model=flux';
-    });
+      final seed = DateTime.now().millisecondsSinceEpoch;
+      final url =
+          'https://image.pollinations.ai/prompt/$encodedPrompt?seed=$seed&width=1024&height=1024&model=flux&nologo=true';
+
+      if (!mounted) return;
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        setState(() {
+          _generatedImageBytes = response.bodyBytes;
+          _isGenerating = false;
+        });
+      } else {
+        throw Exception('Failed to generate image: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isGenerating = false;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
   }
 
   void _downloadImage() async {
-    if (_generatedImageUrl == null) return;
+    if (_generatedImageBytes == null) return;
 
     setState(() {
       _isDownloading = true;
     });
 
     try {
-      var response = await http.get(Uri.parse(_generatedImageUrl!));
       await Gal.putImageBytes(
-        Uint8List.fromList(response.bodyBytes),
+        _generatedImageBytes!,
         name: "imaginai_${DateTime.now().millisecondsSinceEpoch}",
       );
 
@@ -132,7 +152,6 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
                 const Text(
                   'ImaginAI',
                   style: TextStyle(
-                    fontFamily: 'Orbitron',
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -154,52 +173,21 @@ class _ImageGeneratorScreenState extends State<ImageGeneratorScreen> {
                               color: Colors.white,
                             ),
                           )
-                        : _generatedImageUrl != null
+                        : _generatedImageBytes != null
                         ? Stack(
                             fit: StackFit.expand,
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(24),
-                                child: Image.network(
-                                  _generatedImageUrl!,
+                                child: Image.memory(
+                                  _generatedImageBytes!,
                                   fit: BoxFit.cover,
-                                  loadingBuilder:
-                                      (context, child, loadingProgress) {
-                                        if (loadingProgress == null) {
-                                          return child;
-                                        }
-                                        return Center(
-                                          child: CircularProgressIndicator(
-                                            value:
-                                                loadingProgress
-                                                        .expectedTotalBytes !=
-                                                    null
-                                                ? loadingProgress
-                                                          .cumulativeBytesLoaded /
-                                                      loadingProgress
-                                                          .expectedTotalBytes!
-                                                : null,
-                                            color: Colors.white,
-                                          ),
-                                        );
-                                      },
                                   errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          const Icon(
-                                            Icons.broken_image,
-                                            size: 50,
-                                            color: Colors.white54,
-                                          ),
-                                          const SizedBox(height: 16),
-                                          const Text(
-                                            'Server busy (429). Try again.',
-                                            style: TextStyle(color: Colors.white70),
-                                          ),
-                                        ],
+                                    return const Center(
+                                      child: Icon(
+                                        Icons.broken_image,
+                                        size: 50,
+                                        color: Colors.white54,
                                       ),
                                     );
                                   },
